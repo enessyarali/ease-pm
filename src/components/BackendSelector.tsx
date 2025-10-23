@@ -7,6 +7,8 @@ const BackendSelector = () => {
   const options: { label: string; value: AIBackend }[] = [
     { label: 'OpenAI', value: 'openai' },
     { label: 'Gemini', value: 'gemini' },
+    { label: 'Anthropic Claude', value: 'anthropic' },
+    { label: 'fal.ai', value: 'fal' },
   ];
 
   return (
