@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type AIBackend = 'openai' | 'gemini';
+export type AIBackend = 'openai' | 'gemini' | 'anthropic' | 'fal';
 
 interface SettingsState {
   aiBackend: AIBackend;
@@ -9,15 +9,23 @@ interface SettingsState {
 
   openaiApiKey: string | null;
   geminiApiKey: string | null;
+  anthropicApiKey: string | null;
+  falApiKey: string | null;
   setOpenaiApiKey: (key: string | null) => void;
   setGeminiApiKey: (key: string | null) => void;
+  setAnthropicApiKey: (key: string | null) => void;
+  setFalApiKey: (key: string | null) => void;
 
   openaiBaseUrl: string | null;
   openaiModel: string | null;
   geminiModel: string | null;
+  anthropicModel: string | null;
+  falModel: string | null;
   setOpenaiBaseUrl: (url: string | null) => void;
   setOpenaiModel: (model: string | null) => void;
   setGeminiModel: (model: string | null) => void;
+  setAnthropicModel: (model: string | null) => void;
+  setFalModel: (model: string | null) => void;
 
   groupId: string | null;
   groupName: string | null;
@@ -44,14 +52,22 @@ export const useSettingsStore = create<SettingsState>()(
 
       openaiApiKey: null,
       geminiApiKey: null,
+      anthropicApiKey: null,
+      falApiKey: null,
       setOpenaiApiKey: (openaiApiKey) => set({ openaiApiKey }),
       setGeminiApiKey: (geminiApiKey) => set({ geminiApiKey }),
+      setAnthropicApiKey: (anthropicApiKey) => set({ anthropicApiKey }),
+      setFalApiKey: (falApiKey) => set({ falApiKey }),
       openaiBaseUrl: null,
       openaiModel: null,
       geminiModel: null,
+      anthropicModel: null,
+      falModel: null,
       setOpenaiBaseUrl: (openaiBaseUrl) => set({ openaiBaseUrl }),
       setOpenaiModel: (openaiModel) => set({ openaiModel }),
       setGeminiModel: (geminiModel) => set({ geminiModel }),
+      setAnthropicModel: (anthropicModel) => set({ anthropicModel }),
+      setFalModel: (falModel) => set({ falModel }),
 
       groupId: null,
       groupName: null,

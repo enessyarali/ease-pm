@@ -1,4 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
+import Anthropic from '@anthropic-ai/sdk';
+import * as fal from '@fal-ai/serverless-client';
 
 export interface IssueDraft {
   title: string;
@@ -12,7 +14,7 @@ export interface EpicDraft {
   description: string;
 }
 
-export type AIBackend = 'openai' | 'gemini';
+export type AIBackend = 'openai' | 'gemini' | 'anthropic' | 'fal';
 
 export async function generateIssue(prompt: string, backend: AIBackend = 'openai'): Promise<IssueDraft> {
   const systemPrompt =
@@ -71,6 +73,10 @@ async function callLLM(backend: AIBackend, prompt: string, temperature: number):
   switch (backend) {
     case 'gemini':
       return callGemini(prompt);
+    case 'anthropic':
+      return callAnthropic(prompt, temperature);
+    case 'fal':
+      return callFal(prompt, temperature);
     case 'openai':
     default:
       return callOpenAI(prompt, temperature);
@@ -136,6 +142,64 @@ async function callOpenAI(prompt: string, temperature: number): Promise<string> 
 function extractJson(text: string): string {
   const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/i);
   return jsonMatch ? jsonMatch[1].trim() : text.trim();
+}
+
+async function callAnthropic(prompt: string, temperature: number): Promise<string> {
+  const settings = getStoredSettings();
+
+  const apiKey = settings?.anthropicApiKey || (import.meta.env.VITE_ANTHROPIC_API_KEY as string | undefined);
+  const model = settings?.anthropicModel || 'claude-3-5-sonnet-20241022';
+
+  if (!apiKey) throw new Error('Missing Anthropic API key');
+
+  const anthropic = new Anthropic({
+    apiKey,
+    dangerouslyAllowBrowser: true, // Required for browser usage
+  });
+
+  // Split system and user prompts
+  const [systemPrompt, ...userParts] = prompt.split('\n\n');
+  const userPrompt = userParts.join('\n\n');
+
+  const msg = await anthropic.messages.create({
+    model,
+    max_tokens: 1024,
+    temperature,
+    system: systemPrompt,
+    messages: [{ role: 'user', content: userPrompt }],
+  });
+
+  return msg.content[0]?.type === 'text' ? msg.content[0].text : '';
+}
+
+async function callFal(prompt: string, temperature: number): Promise<string> {
+  const settings = getStoredSettings();
+
+  const apiKey = settings?.falApiKey || (import.meta.env.VITE_FAL_API_KEY as string | undefined);
+  const model = settings?.falModel || 'fal-ai/llama-3-1-8b-instruct';
+
+  if (!apiKey) throw new Error('Missing fal.ai API key');
+
+  fal.config({
+    credentials: apiKey,
+  });
+
+  // Split system and user prompts
+  const [systemPrompt, ...userParts] = prompt.split('\n\n');
+  const userPrompt = userParts.join('\n\n');
+
+  const result = await fal.subscribe(model, {
+    input: {
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+      temperature,
+      max_tokens: 1024,
+    },
+  });
+
+  return (result as any).data?.choices?.[0]?.message?.content ?? '';
 }
 
 function safeJsonParse<T>(text: string): T {
